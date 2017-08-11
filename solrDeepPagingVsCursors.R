@@ -9,15 +9,15 @@ globalCollection <- 'gettingstarted'
 # add random data to the collection. it is expected that Solr will generate IDs automatically
 fFill <- function(count=3000, batch=50000) {
   solr_connect(url = paste0('http://', globalSolrHost, ":", globalSolrPort))
-  i = 0
-  totalTime = 0
-  n = sample (1:batch)
+  i <- 0
+  totalTime <- 0
+  n <- sample (1:batch)
   while (i<count) {
-    df <- data.frame(name=n)
+    df <- data.frame(name = n)
     t <- fGetTime()
-    add(df, name=globalCollection, commit=TRUE)
+    add(df, name = globalCollection, commit = TRUE)
     t <- fGetTime() - t
-    i = i + 1
+    i <- i + 1
     totalTime <- totalTime + t
     message(paste0("round ", i, "/", count, ", ", batch, " events in ", t, " seconds, total run for fFill: ", totalTime, " seconds")) 
   }
@@ -26,17 +26,18 @@ fFill <- function(count=3000, batch=50000) {
 # query solr using httr
 fNoPaging <- function (rows=0, start=0, sort=NULL, cursorMark=NULL, q="*:*", 
                        solrHost=globalSolrHost, solrPort=globalSolrPort, collection=globalCollection) {
-  rows <- format(rows, scientific=FALSE)
-  start <- format(start, scientific=FALSE)
+
+  rows <- format(rows, scientific = FALSE)
+  start <- format(start, scientific = FALSE)
   solrUrl <- paste0("http://", globalSolrHost, ":", globalSolrPort, "/solr/", globalCollection, "/query")
-  postContent <- list(q=q, rows=rows, start=start)
+  postContent <- list(q = q, rows = rows, start = start)
   if (! is.null(sort)) {
-    postContent <- c(postContent, sort=sort)
+    postContent <- c(postContent, sort = sort)
   }
   if (! is.null(cursorMark)) {
-    postContent <- c(postContent, cursorMark=cursorMark)
+    postContent <- c(postContent, cursorMark = cursorMark)
   }
-  r<-POST(solrUrl, body = postContent, encode = "form")
+  r < -POST(solrUrl, body = postContent, encode = "form")
   return(fParser(r))
 }
 
@@ -57,12 +58,16 @@ fPaging <- function(page=50000, rows=7851281, sort=NULL) {
 # query solr using cursors
 fCursor <- function(page=50000, rows=7851281, sort="id asc") {
   t <- fGetTime()
-  cursorMark <- '*'
+  cursorMark <- "*"
   while(rows>0) {
     if (rows < page) page <- rows
     result <- fNoPaging(page, 0, sort, cursorMark)
     rows <- rows - page
-    cursorMark <- result$nextCursorMark
+    if (cursorMark == result$nextCursorMark) {
+      rows <- 0
+    } else {
+      cursorMark <- result$nextCursorMark
+    }
   }
   t <- fGetTime() - t
   message(t)
